@@ -1,6 +1,5 @@
 ; 1Kraftwerk
 
-	CALL SYS_MOVE
 ; Amstrad CPC 1K intro by PulkoMandy/Shinra for Forever 2020
 ; Music by Kraftwerk
 
@@ -40,30 +39,36 @@ _start
 ; We expect to be called with RUN", which sets mode 1 and clear the screen.
 
 ; Set the color palette
-	LD A,0
-	LD BC,$0606 ; RED
+	XOR A
+	LD B,$06 ; RED
+	LD C,B
 	CALL SYS_INK
 
 	LD A,1
-	LD BC,$0000 ; BLACK
+	LD B,$00 ; BLACK
+	LD C,B
 	CALL SYS_INK
 
 	LD A,2
-	LD BC,$1A1A ; WHITE
+	LD B,$1A ; WHITE
+	LD C,B
 	CALL SYS_INK
 
-	LD BC,$0000 ; BLACK
+	LD B,$00 ; BLACK
+	LD C,B
 	CALL SYS_SET_BORDER
-	;LD A,3
-	;LD BC,$0F0F ; ORANGE
-	;CALL SYS_INK
-
-	LD IX, MEN
 
 	LD A,1
-	CALL SYS_PEN
+	LD IX, MEN - 4
 
 newpoly
+	; Move on to pen 2 if we were asked to
+	BIT 6,D ; Shall we chage inks?
+	CALL NZ,SYS_PEN
+
+	LD BC, 4
+	ADD IX,BC
+
 	LD E,(IX+0)
 	LD D,(IX+1)
 	LD L,(IX+2)
@@ -72,6 +77,9 @@ newpoly
 	CALL SYS_MOVE
 
 newline
+	;CALL &BD19
+	CALL SYS_LINE
+
 	LD BC, 4
 	ADD IX,BC
 
@@ -81,15 +89,9 @@ newline
 	LD H,(IX+3)
 
 	BIT 7,D
-	JR NZ, endpoly
+	JR Z, newline
 
-	CALL SYS_LINE
-
-	;CALL &BD19
-	JR newline
-
-endpoly
-
+	; Fill the polygon, we need to move to the fill coordinates
 	PUSH DE
 	LD A,0x1F
 	AND D
@@ -99,24 +101,18 @@ endpoly
 	; Use the correct color
 	CALL SYS_GETPEN
 	; fill the poly
-	LD HL,fillbuf
-	LD DE,$2000
+	;LD HL,fillbuf but hopefully whatever value is ok
+	;LD DE,... DE should holdthe buffer size, but whatever value it has is ok
 	CALL SYS_FILL
 
 	POP DE
-	BIT 5,D
-	JR NZ,$
-	BIT 6,D
-	JR Z, nonewink
-
 	LD A,2
-	CALL SYS_PEN
 
-nonewink
-	LD BC, 4
-	ADD IX,BC
+	BIT 5,D ; Are we done yet?
+	JR Z,newpoly
 
-	JR newpoly
+	; TODO let the music play!
+	JR $
 
 ; The DATA
 
