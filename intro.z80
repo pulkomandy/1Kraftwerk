@@ -1,0 +1,163 @@
+; 1Kraftwerk
+
+	CALL SYS_MOVE
+; Amstrad CPC 1K intro by PulkoMandy/Shinra for Forever 2020
+; Music by Kraftwerk
+
+; ---------------------------------
+; Useful system vectors
+; ---------------------------------
+
+SYS_PEN  equ $BBDE
+	; A = new pen
+	; AF is corrupt, and all other registers are preserved
+
+SYS_GETPEN equ $BBE1
+
+SYS_INK equ $BC32
+	; A = PEN
+	; BC = INK (x2 because flashing)
+	; AF, BC, DE and HL are corrupt, and all others are preserved
+SYS_SET_BORDER equ $BC38
+
+SYS_MOVE   equ $BBC0
+	; AF, BC, DE and HL are corrupt
+SYS_SETORG equ $BBC9
+	; AF, BC, DE and HL are corrupt
+SYS_LINE   equ $BBF6
+	; AF, BC, DE and HL are corrupt
+	; DE = X
+	; HL = Y
+
+SYS_FILL equ $BD52
+	; A = pen number
+	; HL = work buffer
+	; DE = work buffer size
+
+; It starts!
+_start
+
+; We expect to be called with RUN", which sets mode 1 and clear the screen.
+
+; Set the color palette
+	LD A,0
+	LD BC,$0606 ; RED
+	CALL SYS_INK
+
+	LD A,1
+	LD BC,$0000 ; BLACK
+	CALL SYS_INK
+
+	LD A,2
+	LD BC,$1A1A ; WHITE
+	CALL SYS_INK
+
+	LD BC,$0000 ; BLACK
+	CALL SYS_SET_BORDER
+	;LD A,3
+	;LD BC,$0F0F ; ORANGE
+	;CALL SYS_INK
+
+	LD IX, MEN
+
+	LD A,1
+	CALL SYS_PEN
+
+newpoly
+	LD E,(IX+0)
+	LD D,(IX+1)
+	LD L,(IX+2)
+	LD H,(IX+3)
+
+	CALL SYS_MOVE
+
+newline
+	LD BC, 4
+	ADD IX,BC
+
+	LD E,(IX+0)
+	LD D,(IX+1)
+	LD L,(IX+2)
+	LD H,(IX+3)
+
+	BIT 7,D
+	JR NZ, endpoly
+
+	CALL SYS_LINE
+
+	;CALL &BD19
+	JR newline
+
+endpoly
+
+	PUSH DE
+	LD A,0x1F
+	AND D
+	LD D,A
+	CALL SYS_MOVE
+
+	; Use the correct color
+	CALL SYS_GETPEN
+	; fill the poly
+	LD HL,fillbuf
+	LD DE,$2000
+	CALL SYS_FILL
+
+	POP DE
+	BIT 5,D
+	JR NZ,$
+	BIT 6,D
+	JR Z, nonewink
+
+	LD A,2
+	CALL SYS_PEN
+
+nonewink
+	LD BC, 4
+	ADD IX,BC
+
+	JR newpoly
+
+; The DATA
+
+; A marker to easily spot the escape sequences (fill, end of stream, set pen)
+k equ 0x8000
+p equ 0x4000
+e equ 0x2000
+
+; The men
+
+MEN
+        defw 41, 0, 53, 9, 66, 97, 58, 104, 64, 130, 73, 135, 80, 136
+		defw 76, 147, 79, 156, 86, 159, 93, 155, 94, 146, 91, 136, 103, 131
+		defw 112, 107, 104, 83, 98, 83, 99, 73, 97, 40, 91, 10, 93, 0
+		defw 80, 0, 82, 70, 68, 42, 58, 0, k|55, 4
+
+        defw 229, 0, 233, 6, 231, 39, 233, 86, 222, 102, 227, 129, 239, 137
+		defw 236, 151, 245, 158, 251, 155, 252, 139, 266, 134, 280, 111
+		defw 278, 90, 264, 116, 253, 9, 256, 4, 250, 1, 246, 12, 247, 72
+		defw 243, 29, 241, 0, k|235, 4
+
+        defw 379, 0, 381, 11, 379, 36, 381, 44, 379, 49, 382, 56, 381, 85
+		defw 385, 93, 382, 106, 376, 94, 366, 92, 369, 98, 379, 123, 392, 129
+		defw 389, 143, 390, 146, 396, 149, 405, 146, 405, 129, 417, 124
+		defw 421, 120, 421, 116, 432, 102, 438, 98, 422, 98, 423, 100
+		defw 415, 109, 411, 100, 413, 67, 409, 50, 408, 31, 403, 8, 409, 2
+		defw 394, 3, 396, 11, 401, 46, 398, 69, 392, 52, 394, 35, 390, 10
+		defw 393, 0, k|385, 6
+
+        defw 559, 0, 569, 12, 565, 33, 570, 48, 572, 68, 576, 83, 577, 98
+		defw 574, 116, 570, 109, 571, 96, 571, 87, 563, 86, 564, 96, 559, 110
+		defw 570, 137, 587, 145, 586, 154, 590, 164, 596, 167, 602, 163
+		defw 603, 152, 598, 143, 612, 135, 619, 106, 612, 90, 606, 86
+		defw 610, 82, 605, 51, 607, 38, 599, 9, 604, 1, 596, 0, 586, 6
+		defw 595, 36, 592, 71, 578, 42, 578, 12, 574, 0, k|p|565, 4
+
+        defw 52,  0,  56, 85,   6, 85,   6, 98, 105, 98, 105, 85,  62, 85,  59, 0, k|55, 4
+        defw 236, 0, 240, 85, 190, 85, 190, 98, 289, 98, 289, 85, 246, 85, 243, 0, k|240, 4
+        defw 397, 0, 401, 85, 352, 85, 352, 98, 451, 98, 451, 85, 408, 85, 404, 0, k|400, 4
+        defw 582, 0, 586, 85, 537, 85, 537, 98, 636, 98, 636, 85, 593, 85, 590, 0, k|e|585, 4
+
+
+fillbuf
+	; Arbitrary free space used by the FILL routine
