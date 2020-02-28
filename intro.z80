@@ -111,8 +111,56 @@ newline
 	BIT 5,D ; Are we done yet?
 	JR Z,newpoly
 
-	; TODO let the music play!
-	JR $
+	LD A,1
+	LD HL,env
+	CALL &BCBC
+
+	LD A,3
+	LD (env+3),A
+	LD HL,env
+	CALL &BCBC
+
+	; let the music play!
+let_the_music
+	LD HL,(mp1)
+
+	CALL &BCAA
+	JR NC,queue_full
+
+	; Note played, move on to next one for next time
+	LD HL,(mp1)
+	LD DE,9
+	ADD HL,DE
+
+	XOR A
+	CP (HL)
+	JR NZ,cont
+
+	LD HL,music
+cont
+	LD (mp1),HL
+
+queue_full
+
+	LD HL,(mp2)
+
+	CALL &BCAA
+	JR NC,let_the_music
+
+	; Note played, move on to next one for next time
+	LD HL,(mp2)
+	LD DE,9
+	ADD HL,DE
+
+	XOR A
+	CP (HL)
+	JR NZ,cont2
+
+	LD HL,ch2.loop
+cont2
+	LD (mp2),HL
+	
+	JR let_the_music
 
 ; The DATA
 
@@ -154,6 +202,91 @@ MEN
         defw 397, 0, 401, 85, 352, 85, 352, 98, 451, 98, 451, 85, 408, 85, 404, 0, k|400, 4
         defw 582, 0, 586, 85, 537, 85, 537, 98, 636, 98, 636, 85, 593, 85, 590, 0, k|e|585, 4
 
+
+	macro note
+	defb \1,\2,\3
+	defw \4
+	defb \5,\6
+	defw \7
+	endm
+
+C3 equ 478
+D3 equ 426
+F3 equ 358
+A4 equ 142
+C5 equ 119
+D5 equ 106
+E5 equ 95
+F5 equ 89
+G5 equ 80
+A5 equ 71
+C6 equ 60
+
+mp1 defw music
+mp2 defw ch2
+
+music
+		; Note definition:
+		; Byte 0 = channel status
+		; Byte 1 = volume enveloppe
+		; Byte 2 = tone enveloppe
+		; Bytes 3, 4 = tone period
+		; Byte 5 = noise period
+		; Byte 6 = start volume
+		; Byte 7,8 = duration or repeat count
+		note 1,1,0,D3,0,0,-2
+		note 1,1,0,C3,0,0,-2
+		note 1,1,0,D3,0,0,-2
+		note 1,1,0,C3,0,0,-2
+		note 1,1,0,D3,0,0,-2
+		note 1,0,0,C3,0,0,32
+		note 1,1,0,F3,0,0,-2
+		note 1,0,0,C3,0,0,32
+		note 1,1,0,D3,0,0,-2
+		note 1,1,0,C3,0,0,-2
+		note 1,1,0,D3,0,0,-2
+		note 1,1,0,C3,0,0,-2
+		note 1,1,0,D3,0,0,-6
+		note 1,0,0,C3,0,0,32
+
+		defb 0
+
+ch2
+		note 2,0,0,C3,0,0,32*32
+ch2.loop
+		note 2,3,0,D5,0,0,32*3
+		note 2,3,0,D5,0,0,32
+		note 2,3,0,F5,0,0,32
+		note 2,3,0,D5,0,0,32*3
+		note 2,3,0,F5,0,0,32*2
+		note 2,3,0,G5,0,0,32
+		note 2,3,0,C6,0,0,32
+		note 2,3,0,A5,0,0,32*4
+
+		note 2,3,0,A4,0,0,32*3
+		note 2,3,0,A4,0,0,32
+		note 2,3,0,C5,0,0,32
+		note 2,3,0,A4,0,0,32*3
+		note 2,3,0,C5,0,0,32*2
+		note 2,3,0,D5,0,0,32
+		note 2,3,0,G5,0,0,32
+		note 2,3,0,E5,0,0,32*4
+		defb 0
+
+env
+		; Volume enveloppe
+		; Byte 0 = number of sections
+			; Byte 0 = step count + bit7
+			; Byte 1 = step size
+			; Byte 2 = pause time
+		defb 1, 16,-1,1
+
+ent
+		; Tone enveloppe
+		; Byte 0 = number of sections
+			; Byte 0 = step count
+			; Byte 1 = step size
+			; Byte 2 = step time
 
 fillbuf
 	; Arbitrary free space used by the FILL routine
