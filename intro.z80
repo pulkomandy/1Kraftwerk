@@ -120,6 +120,24 @@ newline
 	LD HL,env
 	CALL &BCBC
 
+	LD A,2
+	LD HL,henv
+	CALL &BCBC
+
+	LD A,4
+	LD HL,envnoise
+	CALL &BCBC
+
+	LD A,1
+	LD HL,envt
+	CALL &BCBF
+
+	LD A,96
+	LD (envt+2),A
+	LD A,2
+	LD HL,envt
+	CALL &BCBF
+
 	; let the music play!
 let_the_music
 	LD HL,(mp1)
@@ -136,7 +154,15 @@ let_the_music
 	CP (HL)
 	JR NZ,cont
 
+	INC HL
+	DEC (HL)
+	JR Z, contloop
 	LD HL,music
+	JR cont
+
+contloop
+	INC (HL)
+	LD HL,music.loop
 cont
 	LD (mp1),HL
 
@@ -156,6 +182,14 @@ queue_full
 	CP (HL)
 	JR NZ,cont2
 
+	INC HL
+	DEC (HL)
+	JR Z,cl2
+	LD HL,ch2
+	JR cont2
+
+cl2
+	INC (HL)
 	LD HL,ch2.loop
 cont2
 	LD (mp2),HL
@@ -174,7 +208,6 @@ full2
 	XOR A
 	CP (HL)
 	JR NZ,cont3
-
 	LD HL,ch3.loop
 cont3
 	LD (mp3),HL
@@ -227,11 +260,14 @@ MEN
 C3 equ 478
 D3 equ 426
 F3 equ 358
+C4 equ 239
+Ds4 equ 201
 A4 equ 142
 C5 equ 119
 D5 equ 106
 E5 equ 95
 F5 equ 89
+Fs5 equ 84
 G5 equ 80
 A5 equ 71
 C6 equ 60
@@ -249,6 +285,25 @@ music
 		; Byte 5 = noise period
 		; Byte 6 = start volume
 		; Byte 7,8 = duration or repeat count
+		note 1,0,1,C4,0,15,54  ; 54
+		note 1,0,0,C4,0,0,50   ; 104
+		note 1,0,1,C4,0,15,57  ; 161
+		note 1,0,0,C4,0,0,50   ; 211
+		note 1,0,1,C4,0,15,57  ; 268
+		note 1,0,0,C4,0,0,47   ; 315
+		note 1,0,1,C4,0,15,50  ; 365
+		note 1,0,0,C4,0,0,48   ; 413
+
+		note 1,2,0,D3,0,16,355 ; 768
+
+		note 1,3,0,Ds4,0,0,24
+		note 1,3,0,Fs5,0,0,24
+		note 1,3,0,C5,0,0,24   ; 840
+		note 1,0,0,C5,0,0,64   ; 904
+
+		defb 0,3
+
+music.loop
 		note 1,1,0,D3,0,0,-2
 		note 1,1,0,C3,0,0,-2
 		note 1,1,0,D3,0,0,-2
@@ -264,11 +319,30 @@ music
 		note 1,1,0,D3,0,0,-6
 		note 1,0,0,C3,0,0,32
 
-		defb 0
+		defb 0,1
 
 ch2
-		note 2,0,0,C3,0,0,32*32
+		note 2,0,0,C4,0,0,26
+		note 2,0,1,C4,0,7,54
+		note 2,0,0,C4,0,0,50
+		note 2,0,1,C4,0,7,57
+		note 2,0,0,C4,0,0,50
+		note 2,0,1,C4,0,7,57
+		note 2,0,0,C4,0,0,47
+		note 2,0,1,C4,0,7,50
+		note 2,0,0,C4,0,0,48 ; 439
+
+		note 2,0,0,C3,0,0, 768 - 439 - 6 * 13
+
+		note 2,4,0,1,1,0,-13
+
+		note 2,0,0,C3,0,0, 904 - 768
+
+		defb 0,3
+
 ch2.loop
+		note 2,0,0,C3,0,0,2*32*32
+
 		note 2,3,0,D5,0,0,32*3
 		note 2,3,0,D5,0,0,32
 		note 2,3,0,F5,0,0,32
@@ -286,32 +360,45 @@ ch2.loop
 		note 2,3,0,D5,0,0,32
 		note 2,3,0,G5,0,0,32
 		note 2,3,0,E5,0,0,32*4
-		defb 0
+		defb 0,1
 
 ch3
-		note 4,0,0,C3,0,0,32*32
+		note 4,0,0,C3,0,0,904 * 3 + 32*32
 ch3.loop
-		note 4,1,0,C3,12,0,32*2
-		note 4,1,0,C3,6,0,32*2
-		note 4,1,0,C3,12,0,32
-		note 4,1,0,C3,12,0,32
-		note 4,1,0,C3,6,0,32*2
+		note 4,1,2,C3,0,0,32*2
+		note 4,1,2,C3,6,0,32*2
+		note 4,1,2,C3,0,0,32
+		note 4,1,2,C3,0,0,32
+		note 4,1,2,C3,6,0,32*2
 		defb 0
 
 env
 		; Volume enveloppe
 		; Byte 0 = number of sections
-			; Byte 0 = step count + bit7
+			; Byte 0 = step count
 			; Byte 1 = step size
 			; Byte 2 = pause time
 		defb 1, 16,-1,1
 
-ent
+henv
+		defb 1
+
+		; Section 1 (HW)
+		defb 8 + 128
+		defw 53
+
+envnoise
+		defb 2
+		defb 0, 15, 3
+		defb 0, 0, 3
+
+envt
 		; Tone enveloppe
 		; Byte 0 = number of sections
 			; Byte 0 = step count
 			; Byte 1 = step size
 			; Byte 2 = step time
+		defb 1,127,-2,1
 
 fillbuf
 	; Arbitrary free space used by the FILL routine
