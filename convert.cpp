@@ -6,10 +6,7 @@
 #define NANOSVG_IMPLEMENTATION
 #include "nanosvg.h"
 
-/* Converts an SVG file into a Lua array suitable for display in GRafX2 with
- * test.lua. I'll probably be too lazy to fully automate the conversion from
- * that to the syntax required by the assembler again, and use some search and
- * replace in vim.
+/* Converts an SVG file into defb/defw statements wit points coordinates.
  */
 
 int main(void)
@@ -35,12 +32,14 @@ int main(void)
 
 		for (NSVGpath * path = shape->paths; path != NULL; path = path->next)
 		{
+			int16_t x = 0, y = 0;
 			for (int i = 0; i < path->npts; i+=3)
 			{
 				int16_t X = path->pts[i * 2];
 				int16_t Y = 400 - path->pts[i * 2 + 1];
 
-				printf("%d, %d, ", X, Y);
+				printf("%d, %d, ", X - x, Y - y);
+				x = X; y = Y;
 			}
 		}
 
