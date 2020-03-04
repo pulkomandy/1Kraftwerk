@@ -44,20 +44,20 @@ _start
 	XOR A
 	LD B,$06 ; RED
 	LD C,B
+	PUSH BC
+	PUSH BC
+	PUSH BC
 	CALL SYS_INK
 
 	LD A,1
-	LD B,$00 ; BLACK
-	LD C,B
+	POP BC
 	CALL SYS_INK
 
 	LD A,2
-	LD B,$1A ; WHITE
-	LD C,B
+	POP BC
 	CALL SYS_INK
 
-	LD B,$00 ; BLACK
-	LD C,B
+	POP BC
 	CALL SYS_SET_BORDER
 
 	LD A,1
@@ -236,6 +236,21 @@ full2
 cont3
 	LD (mp3),HL
 	
+	LD HL,(tptr)
+	LD A,(HL)
+	CP &FF
+	JR Z,rewindtxt
+
+	INC HL
+	LD (tptr), HL
+
+	CALL &BB5A
+
+	JR let_the_music
+
+rewindtxt
+	LD HL,textloop
+	LD (tptr),HL
 	JR let_the_music
 
 ; The DATA
@@ -313,6 +328,7 @@ C6 equ 60
 mp1 defw music
 mp2 defw ch2
 mp3 defw ch3
+tptr defw textstart
 
 music
 		; Note definition:
@@ -401,7 +417,13 @@ ch2.loop
 		defb 0,1
 
 ch3
-		note 4,0,0,C3,0,0,904 * 3 + 32*32
+		note 4,0,0,C3,0,0,904 - 16*32
+		note 4,0,0,C3,0,0,16*32
+		note 4,0,0,C3,0,0,904 - 16*32
+		note 4,0,0,C3,0,0,16*32
+		note 4,0,0,C3,0,0,904 - 16*32
+		note 4,0,0,C3,0,0,16*32
+		note 4,0,0,C3,0,0,32*32
 ch3.loop
 		note 4,1,2,C3,0,0,32*2
 		note 4,1,2,C3,6,0,32*2
@@ -437,6 +459,18 @@ envt
 			; Byte 1 = step size
 			; Byte 2 = step time
 		defb 1,127,-2,1
+
+textstart
+		defb &1A,10,30,0,12
+		defb &1C, 2, 26, 26
+		defb &02
+		defb &1C, 1, 0, 0
+textloop
+		defb "  We are the robots  "
+		defb &0F, 2
+		defb "Wir sind die roboter "
+		defb &0F, 1
+		defb &FF
 
 fillbuf
 	; Arbitrary free space used by the FILL routine
