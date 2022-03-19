@@ -42,15 +42,15 @@ _start
 
 ; Set the color palette
 	XOR A
-	LD B,$06 ; RED
+	LD B,6 ; BLACK
 	LD C,B
-	PUSH BC
-	PUSH BC
-	PUSH BC
 	CALL SYS_INK
 
+	LD B, 0 ; RED
+	LD C, B
+	PUSH BC
+	PUSH BC
 	LD A,1
-	POP BC
 	CALL SYS_INK
 
 	LD A,2
@@ -79,7 +79,7 @@ newpoly
 	CALL SYS_MOVE
 
 newline
-	;CALL &BD19
+	; CALL &BD19
 
 	INC IX
 	INC IX
@@ -125,7 +125,7 @@ fill
 	; Use the correct color
 	CALL SYS_GETPEN
 	; fill the poly
-	;LD HL,fillbuf but hopefully whatever value is ok
+	LD HL,fillbuf but hopefully whatever value is ok
 	;LD DE,... DE should holdthe buffer size, but whatever value it has is ok
 	CALL SYS_FILL
 
