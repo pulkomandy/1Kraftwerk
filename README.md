@@ -3,7 +3,7 @@
 
 How much Kraftwerk can you fit in a kilobyte? Let's find out!
 
-1K intro for Amstrad CPC
+1K intro for Amstrad CPC 664/6128/Plus
 
 Planned for Forever 2020 "other 8bit" competition, but that didn't happen.
 I wanted to finish and polish it a bit during the trip to the party and during the party itself.
@@ -12,7 +12,8 @@ So you get something not as good as it could have been, I guess. I hope that's o
 Code by PulkoMandy
 Visuals and Music from Kraftwerk, adjusted to fit the constraints
 
-
+This intro will not work on the CPC464 with firmware 1.0 because it needs the "GRA FILL" &BD52
+firmware vector to fill shapes on screen. This vector was introduced only with the CPC664.
 
 Some random notes from 2020
 ---------------------------
